@@ -13,6 +13,9 @@ usage: sitedork.py [-h] [-l limit] -d domain
 Information Dork tool for searching domains,files and emails.
 
 optional arguments:
+
 	-h, --help	show this help message and exit
+
 	-l limit, --limit limit		results of searching limit(default:1000)
+
 	-d domain, --domain domain 	domain name for searching
