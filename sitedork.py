@@ -66,11 +66,11 @@ class InfoDork(object):
                   }
     GOOGLE_MAX_PAGE = 100   # Max results per page of Google
     BAIDU_DORK = {"subdomain": "site:{}",
-                  "install": "inurl:readme inurl:license inurl:install inurl:setup site:{}",
-                  "redirect": "inurl:redir inurl:url inurl:redirect inurl:return inurl:src=http site:{}",
-                  "sensitive": "filetype:bak filetype:sql filetype:rar filetype:zip filetype:log site:{}",
-                  "document": "filetype:doc filetype:docx filetype:csv filetype:pdf filetype:txt site:{}",
-                  "extension": "filetype:cgi filetype:php filetype:aspx filetype:jsp filetype:swf filetype:fla filetype:xml site:{}"
+                  "install": "inurl:setup site:{}",
+                  "redirect": "inurl:redirect site:{}",
+                  "sensitive": "filetype:log site:{}",
+                  "document": "filetype:txt site:{}",
+                  "extension": "filetype:php site:{}"
                   }
     BAIDU_MAX_PAGE = 50   # Max results per page of Baidu
     USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36"
@@ -85,19 +85,15 @@ class InfoDork(object):
         Searching domains,files and emails with Google and Baidu.
         :return:
         """
-        dork_query = InfoDork.GOOGLE_DORK.copy()
-        for doc, value in dork_query.items():
-            dork_query[doc] = [value, InfoDork.BAIDU_DORK.get(doc)]
-            InfoDork.BAIDU_DORK.pop(doc)
-        for doc, value in dork_query.items():
+        for doc, value in InfoDork.GOOGLE_DORK.items():
             print("[-] Executing to Google [%s]" % doc)
             query = urllib.parse.quote_plus(value[0].format(self.domain))
             self.google_search(doc, query)
-            #print("[-] Executing to Baidu [%s]" % doc)
-            #query = urllib.parse.quote_plus(value[1].format(self.domain))
-            #self.baidu_search(doc, query)
-            # Sleep for random seconds.
-            sleep(randint(5, 20))
+
+        for doc, value in InfoDork.BAIDU_DORK.items():
+            print("[-] Executing to Baidu [%s]" % doc)
+            query = urllib.parse.quote_plus(value[1].format(self.domain))
+            self.baidu_search(doc, query)
 
     def get_query_pages(self, max_page_result):
         """
@@ -121,7 +117,7 @@ class InfoDork(object):
         :return: None
         """
         search_results = []
-        output_file = InfoDork.OUTPUT_PATH + doc + '.txt'
+        output_file = InfoDork.OUTPUT_PATH + 'g-' + doc + '.txt'
         main_url = "https://www.google.com/search?filter=0&start={0}&q={1}&num={2}"
         header = {'user-agent': InfoDork.USER_AGENT, 'accept-language': 'en-US,en;q=0.5'}
         pages, result_page = self.get_query_pages(InfoDork.GOOGLE_MAX_PAGE)
@@ -180,7 +176,7 @@ class InfoDork(object):
         :return: None
         """
         search_results = []
-        output_file = InfoDork.OUTPUT_PATH + doc + '.txt'
+        output_file = InfoDork.OUTPUT_PATH + 'b-' + doc + '.txt'
         main_url = "https://www.baidu.com/s?ie=utf-8&cl=0&pn={0}&wd={1}&rn={2}"
         header = {'user-agent': InfoDork.USER_AGENT, 'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8'}
         pages, result_page = self.get_query_pages(InfoDork.BAIDU_MAX_PAGE)
