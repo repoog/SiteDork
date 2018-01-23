@@ -93,9 +93,11 @@ class InfoDork(object):
             print("[-] Executing to Google [%s]" % doc)
             query = urllib.parse.quote_plus(value[0].format(self.domain))
             self.google_search(doc, query)
-            print("[-] Executing to Baidu [%s]" % doc)
-            query = urllib.parse.quote_plus(value[1].format(self.domain))
-            self.baidu_search(doc, query)
+            #print("[-] Executing to Baidu [%s]" % doc)
+            #query = urllib.parse.quote_plus(value[1].format(self.domain))
+            #self.baidu_search(doc, query)
+            # Sleep for random seconds.
+            sleep(randint(5, 20))
 
     def get_query_pages(self, max_page_result):
         """
@@ -129,18 +131,16 @@ class InfoDork(object):
             try:
                 result_html = requests.get(main_url.format(page, query, result_page), headers=header, timeout=10)
                 parse_html = BeautifulSoup(result_html.text, 'lxml')
-            except TimeoutError:
+            except Exception as err:
+                print(err)
                 continue
-            except Exception:
-                continue
+            # Sleep for random seconds.
+            sleep(randint(15, 30))
             if result_count is None:
                 try:
                     count_text = parse_html.select("#resultStats")[0].children.__next__()
-                except StopIteration:
-                    print("No results.")
-                    break
-                except IndexError:
-                    print("Try again later.")
+                except Exception as err:
+                    print(err)
                     break
                 result_count = int(re.search(r'([0-9\'\,]+)', count_text).group(1).replace(',', ''))
             # Print progress line.
@@ -148,8 +148,6 @@ class InfoDork(object):
             sys.stdout.write("|" + ">" * progress + "|" + str(progress) + "%\r")
             if progress != 100:
                 sys.stdout.flush()
-            # Sleep for random seconds.
-            sleep(randint(5, 10))
             results = self.google_result_parse(parse_html.select("h3.r a"))
             if len(search_results) + len(results) > self.limit:
                 del results[self.limit - len(search_results):]
@@ -261,7 +259,12 @@ class InfoDork(object):
         :return: None
         """
         subdomain_list = []
-        [subdomain_list.append(item[1].split('/')[2]) for item in results]
+        for item in results:
+            try:
+                subdomain = re.search(r'([a-zA-Z\d\-]{1,}\.){2,}[a-zA-Z]{2,}', item[1])
+                subdomain_list.append(subdomain.group(0))
+            except Exception as err:
+                print(err)
         subdomain_list = list(set(subdomain_list))
         with open(file_name, "+a") as f:
             for subdomain in subdomain_list:
@@ -291,7 +294,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)
 
     parser = argparse.ArgumentParser(description="Information Dork tool for searching domains,files and emails.")
-    parser.add_argument('-l', '--limit', type=int, metavar='limit', default=1000,
+    parser.add_argument('-l', '--limit', type=int, metavar='limit', default=100,
                         help='results of searching limit(default:%(default)s)')
     parser.add_argument('-d', '--domain', type=domain_valid, metavar='domain', required=True,
                         help='domain name for searching')
