@@ -53,24 +53,24 @@ class InfoDork(object):
 
 
     Author: repoog
-    Version: v1.0
+    Version: v1.1
     Create Date: 2018.1.21
     Python Version: v3.6.4
     """
     GOOGLE_DORK = {"subdomain": "site:{}",
                   "install": "site:{} inurl:readme OR inurl:license OR inurl:install OR inurl:setup",
                   "redirect": "site:{} inurl:redir OR inurl:url OR inurl:redirect OR inurl:return OR inurl:src=http",
-                  "sensitive": "site:{} ext:bak OR ext:sql OR ext:rar OR ext:zip OR ext:log",
-                  "document": "site:{} ext:doc OR ext:docx OR ext:csv OR ext:pdf OR ext:txt",
-                  "extension": "site:{} ext:cgi OR ext:php OR ext:aspx OR ext:jsp OR ext:swf OR ext:fla OR ext:xml"
+                  "sensitive": "site:{} filetype:bak OR filetype:sql OR filetype:rar OR filetype:zip OR filetype:log",
+                  "document": "site:{} filetype:doc OR filetype:docx OR filetype:csv OR filetype:pdf OR filetype:txt",
+                  "extension": "site:{} filetype:cgi OR filetype:php OR filetype:aspx OR filetype:jsp OR filetype:swf OR filetype:fla OR filetype:xml"
                   }
     GOOGLE_MAX_PAGE = 100   # Max results per page of Google
     BAIDU_DORK = {"subdomain": "site:{}",
-                  "install": "inurl:setup site:{}",
-                  "redirect": "inurl:redirect site:{}",
-                  "sensitive": "filetype:log site:{}",
-                  "document": "filetype:txt site:{}",
-                  "extension": "filetype:php site:{}"
+                  "install": "site:{} inurl:setup",
+                  "redirect": "site:{} inurl:redirect",
+                  "sensitive": "site:{} filetype:log",
+                  "document": "site:{} filetype:txt",
+                  "extension": "site:{} filetype:php"
                   }
     BAIDU_MAX_PAGE = 50   # Max results per page of Baidu
     USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36"
@@ -87,12 +87,12 @@ class InfoDork(object):
         """
         for doc, value in InfoDork.GOOGLE_DORK.items():
             print("[-] Executing to Google [%s]" % doc)
-            query = urllib.parse.quote_plus(value[0].format(self.domain))
+            query = urllib.parse.quote_plus(value.format(self.domain))
             self.google_search(doc, query)
 
         for doc, value in InfoDork.BAIDU_DORK.items():
             print("[-] Executing to Baidu [%s]" % doc)
-            query = urllib.parse.quote_plus(value[1].format(self.domain))
+            query = urllib.parse.quote_plus(value.format(self.domain))
             self.baidu_search(doc, query)
 
     def get_query_pages(self, max_page_result):
@@ -132,6 +132,7 @@ class InfoDork(object):
                 continue
             # Sleep for random seconds.
             sleep(randint(15, 30))
+
             if result_count is None:
                 try:
                     count_text = parse_html.select("#resultStats")[0].children.__next__()
@@ -142,13 +143,13 @@ class InfoDork(object):
             # Print progress line.
             progress = int((page + 1) / float(pages) * 100)
             sys.stdout.write("|" + ">" * progress + "|" + str(progress) + "%\r")
-            if progress != 100:
-                sys.stdout.flush()
+            sys.stdout.flush() if progress != 100 else print('\n')
+
             results = self.google_result_parse(parse_html.select("h3.r a"))
             if len(search_results) + len(results) > self.limit:
                 del results[self.limit - len(search_results):]
             search_results += results
-        is_subdomain = re.search(r'^site[^\+]*$', query)    # Check searching subdomain.
+        is_subdomain = re.search(r'^site[^\+]*$', query)
         if not is_subdomain:
             self.output_file(output_file, search_results)
         else:
@@ -188,6 +189,9 @@ class InfoDork(object):
                 parse_html = BeautifulSoup(result_html.text, 'lxml')
             except TimeoutError:
                 continue
+            # Sleep for random seconds.
+            sleep(randint(5, 10))
+
             if result_count is None:
                 count_text = parse_html.select(".nums")[0].get_text()
                 result_count = int(re.search(r'([0-9\'\,]+)', count_text).group(1).replace(',', ''))
@@ -197,13 +201,12 @@ class InfoDork(object):
             progress = int((page + 1) / float(pages) * 100)
             sys.stdout.write("|" + ">" * progress + "|" + str(progress) + "%\r")
             sys.stdout.flush() if progress != 100 else print('\n')
-            # Sleep for random seconds.
-            sleep(randint(5, 10))
+
             results = self.baidu_result_parse(parse_html.select(".t > a"))
             if len(search_results) + len(results) > self.limit:
                 del results[self.limit - len(search_results):]
             search_results += results
-        is_subdomain = re.search(r'^site[^\+]*$', query)    # Check searching subdomain.
+        is_subdomain = re.search(r'^site[^\+]*$', query)
         if not is_subdomain:
             self.output_file(output_file, search_results)
         else:
@@ -243,7 +246,7 @@ class InfoDork(object):
         :param results: searched results.
         :return: None
         """
-        with open(file_name, "+a") as f:
+        with open(file_name, "+a", encoding='utf-8') as f:
             for item in results:
                 f.write(item[0] + "\n" + item[1] + "\n\n")
 
@@ -262,7 +265,7 @@ class InfoDork(object):
             except Exception as err:
                 print(err)
         subdomain_list = list(set(subdomain_list))
-        with open(file_name, "+a") as f:
+        with open(file_name, "+a", encoding='utf-8') as f:
             for subdomain in subdomain_list:
                 f.write(subdomain + "\n")
 
