@@ -53,8 +53,9 @@ class InfoDork(object):
 
 
     Author: repoog
-    Version: v1.1
+    Version: v1.2
     Create Date: 2018.1.21
+    Last Update: 2019.5.20
     Python Version: v3.6.4
     """
     GOOGLE_DORK = {"subdomain": "site:{}",
@@ -125,7 +126,7 @@ class InfoDork(object):
 
         for page in range(pages):
             try:
-                result_html = requests.get(main_url.format(page, query, result_page), headers=header, timeout=10)
+                result_html = requests.get(main_url.format(page, query, result_page), headers=header, timeout=20)
                 parse_html = BeautifulSoup(result_html.text, 'lxml')
             except Exception as err:
                 print(err)
@@ -145,7 +146,7 @@ class InfoDork(object):
             sys.stdout.write("|" + ">" * progress + "|" + str(progress) + "%\r")
             sys.stdout.flush() if progress != 100 else print('\n')
 
-            results = self.google_result_parse(parse_html.select("h3.r a"))
+            results = self.google_result_parse(parse_html.select("div.r a"))
             if len(search_results) + len(results) > self.limit:
                 del results[self.limit - len(search_results):]
             search_results += results
@@ -166,7 +167,8 @@ class InfoDork(object):
         for result in results:
             title = result.get_text()
             domain = result.attrs['href'].split('&sa=')[0][7:]
-            item_results.append((title, domain))
+            if title and domain:
+                item_results.append((title, domain))
         return item_results
 
     def baidu_search(self, doc, query):
@@ -246,6 +248,8 @@ class InfoDork(object):
         :param results: searched results.
         :return: None
         """
+        if not results:
+            return
         with open(file_name, "+a", encoding='utf-8') as f:
             for item in results:
                 f.write(item[0] + "\n" + item[1] + "\n\n")
@@ -260,11 +264,14 @@ class InfoDork(object):
         subdomain_list = []
         for item in results:
             try:
-                subdomain = re.search(r'([a-zA-Z\d\-]{1,}\.){2,}[a-zA-Z]{2,}', item[1])
-                subdomain_list.append(subdomain.group(0))
+                subdomain = re.search(r'([a-zA-Z\d\-]{2,}\.){1,}[a-zA-Z]{2,}', item[1]).group(0)
+                if subdomain.find(self.domain) != -1:
+                    subdomain_list.append(subdomain)
             except Exception as err:
                 print(err)
         subdomain_list = list(set(subdomain_list))
+        if not subdomain_list:
+            return
         with open(file_name, "+a", encoding='utf-8') as f:
             for subdomain in subdomain_list:
                 f.write(subdomain + "\n")
@@ -289,9 +296,9 @@ def domain_valid(domain):
 
 
 if __name__ == '__main__':
-    print(InfoDork.__doc__)
     signal.signal(signal.SIGINT, sigint_handler)
 
+    print(InfoDork.__doc__)
     parser = argparse.ArgumentParser(description="Information Dork tool for searching domains,files and emails.")
     parser.add_argument('-l', '--limit', type=int, metavar='limit', default=100,
                         help='results of searching limit(default:%(default)s)')

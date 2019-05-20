@@ -12,6 +12,9 @@
 
 Baidu的搜索结果URL是经过加密的，通过二次请求的方式可获得真实的URL，因此采用多线程请求。但Baidu对或搜索的支持并不是很好，高级搜索语句的或搜索会显示无结果，因此每次搜索只能设置一次关联关键词，例如："inurl:setup site:baidu.com'，而"inurl:setup inurl:install site:baidu.com'会显示无搜索结果，即便用|或OR。
 
+### 注意事项
+因为Google搜索的原因，执行环境必须能够翻墙。
+
 ### 使用说明
 ```
 usage: sitedork.py [-h] [-l limit] -d domain
